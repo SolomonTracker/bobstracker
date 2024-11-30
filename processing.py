@@ -10,20 +10,19 @@ def test():
     rng = np.random.default_rng()
 
     # open test image
-    pic = Image.open("toy_ex.png")
+    pic = Image.open("test.png")
     w, h = pic.size
-    pic_arr = np.array(pic, dtype=np.uint8)
+    pic_arr = np.array(pic, dtype=np.uint8).reshape(-1)
 
     # generate signature
-    signature = gen_signatures(rng, w*h, 5, 1, ["WhoCares"])[0]
+    signature = gen_signatures(rng, w*h, w, 1, ["WhoCares"])[0]
     
     # sign image
-    # pic_arr_signed = sign_image(pic_arr, signature[0])
-    pic_arr_signed = sign_image(pic_arr, {8: 1})
+    pic_arr_signed = sign_image(pic_arr, signature[0]).reshape(h, w)
     pic_signed = Image.fromarray(pic_arr_signed, )
 
     # save it
-    pic_signed.save("out_toy_ex.png")
+    pic_signed.save("out_test.png")
     
     return
 
