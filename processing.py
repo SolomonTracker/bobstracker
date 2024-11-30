@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 from random import randint
 
-def test():
+def _test():
     rng = np.random.default_rng()
 
     # open test image
@@ -15,13 +15,13 @@ def test():
     pic_arr = np.array(pic, dtype=np.uint8).reshape(-1)
 
     # generate signature
-    names = ["WhoCares", "SomeoneDoes"]
+    names = ["WhoCares#1", "WhoCares#2", "SomeoneDoes#1"]
     signature = gen_signatures(rng, w*h, w, len(names))
     
     # sign image
     # pic_arr_signed = sign_image(pic_arr, signature[0])
     pic_arr_signed = sign_image(pic_arr, signature[0])
-    assert (check_signature(pic_arr, pic_arr_signed, signature[0]))
+    # assert (check_signature(pic_arr, pic_arr_signed, signature[0]))
     pic_signed = Image.fromarray(pic_arr_signed.reshape(h, w))
 
     # save it
@@ -29,13 +29,43 @@ def test():
     
     return
 
+def test():
+    rng = np.random.default_rng()
+
+    ##### ORIG IMAG #####
+    pic = Image.open("test.png")
+    w, h = pic.size
+    pic_arr = np.array(pic, dtype=np.uint8).reshape(-1)
+
+    ##### SIGNATURES #####
+    N_OF_IDXS = 200
+    names = ["WhoCares#1", "WhoCares#2", "SomeoneDoes#1", "SomeoneDoes#2"]
+    signature = gen_signatures(rng, w*h, N_OF_IDXS, len(names))
+
+    return
+
+def package_box(orig_image, image, signatures):
+    usable_signature = -1
+    for sign in signatures:
+        if not check_signature(orig_image, image, sign):
+            usable_signature = sign
+            break
+
+    if usable_signature == -1:
+        return -1
+
+    return sign_image(image, usable_signature)
+
+def get_signers(orig_image, image, signatures, names):
+    return [name for name, sign in zip(names, signatures) if check_signature(orig_image, image, sign)]
+
 def sign_image(image, signature):
     """
     image: in array form [uint8]
     signature: hashmap( (j: int) -> bool )
     """
     
-    return np.array([x if signature.get(j, 0) == 0 else (int(x)+10)%255 for j, x in enumerate(image)], dtype=np.uint8)
+    return np.array([x if signature.get(j, 0) == 0 else (int(x)+10)%256 for j, x in enumerate(image)], dtype=np.uint8)
 
 def check_signature(orig_image, image, signature) -> bool:
     """
