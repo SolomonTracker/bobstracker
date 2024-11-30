@@ -8,7 +8,7 @@ from PIL import Image
 import subprocess
 import graphviz
 
-image_orig = Image.open("cert_0.png")
+image_orig = Image.open(".orig.png")
 w_orig, h_orig = image_orig.size
 image_orig = np.array(image_orig).reshape(-1)
 
@@ -54,8 +54,14 @@ def packageCLI(args):
     subprocess.run(["xdg-open", f"cert_{int(fp[-5])+1}.png"])
 
 def cleanCLI(_args):
+    subprocess.run(["cp", ".orig.png","cert_0.png"])
+    
     with open("signers.db", "wb") as f:
         pickle.dump([[]], f)
+        
+    with open("signatures.bob", "wb") as output:
+        pickle.dump([], output)
+
 
 def failureCLI(_args):
     print("CLI Failure")
