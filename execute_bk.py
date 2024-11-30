@@ -30,71 +30,69 @@ def generateCLI(args):
     with open("signatures.bob", "wb") as output:
         pickle.dump(signatures_by_name, output)
 
-def newpackageCLI(args):
-    with open("signers.db", "rb") as f:
-        signers_db = pickle.load(f)
-
-    pk_id, trace = signers_db
-    trace.append([])
-    pk_id += 1
-    signers_db = (pk_id, trace)
-
-    with open("signers.db", "wb") as f:
-        pickle.dump(signers_db, f)
-
-    subprocess.run(["cp", ".orig.png", get_last_fp(signers_db)])
-
 def packageCLI(args):
     with open("signatures.bob", "rb") as f:
         signatures_by_name = pickle.load(f)
-    with open("signers.db", "rb") as f:
-        signers_db = pickle.load(f)
 
-    name = args[0]
+    name, fp = args
     
     sign = signatures_by_name[name]
-    image = np.array(Image.open(get_last_fp(signers_db))).reshape(-1)
-
-    signers_db[1][-1].append(name)
-    
+    image = np.array(Image.open(fp)).reshape(-1)
     image_signed = package_box(image_orig, image, [sign])
     image_signed_to_save = Image.fromarray(image_signed.reshape(h_orig, w_orig))
-    image_signed_to_save.save(get_last_fp(signers_db))
+    image_signed_to_save.save(f"cert_{int(fp[-5])+1}.png")
 
-    with open("signers.db", "wb") as f:
-        pickle.dump(signers_db, f)
-        
-    update_database()
+    # dot = graphviz.Digraph(comment='Package Life Graph')
+    # dot.node('A')
+    # dot.node('B')
+    # dot.render(".graph.gv")
 
-    subprocess.run(["xdg-open", get_last_fp(signers_db)])
+    signers = get_signers(image_orig, image_signed, signatures_by_name.values(), signatures_by_name.keys())
 
-def get_last_fp(signers_db):
-    return f"pkg_{chr(ord('a')+signers_db[0])}_{len(signers_db[1][-1])}.png"
+    update_database(signers)
+
+    subprocess.run(["xdg-open", f"cert_{int(fp[-5])+1}.png"])
 
 def cleanCLI(_args):
+    subprocess.run(["cp", ".orig.png","cert_0.png"])
+    
     with open("signers.db", "wb") as f:
-        pickle.dump((-1, []), f)
+        pickle.dump([[]], f)
         
     with open("signatures.bob", "wb") as output:
-        pickle.dump({}, output)
+        pickle.dump([], output)
+
 
 def failureCLI(_args):
     print("CLI Failure")
 
-def update_database():
-    with open("signers.db", "rb") as f:
-        signers_db = pickle.load(f)
-        
+def update_database(signers):
+    try:
+        with open("signers.db", "rb") as f:
+            signers_db = pickle.load(f)
+    except:
+        signers_db = [[]]
+        with open("signers.db", "wb") as f:
+            pickle.dump(signers_db, f)
+
+    for L, entry in enumerate(signers_db):
+        coinc = [comp for comp in signers if comp not in entry]
+        if len(coinc) == 1:
+            signers_db[L].append(coinc[0])
+
     dot = graphviz.Digraph(comment='Package Life Graph')
-    for K, entry in enumerate(signers_db[1]):
-        dot.node(f"{K}{0}", entry[0])
+    for entry in signers_db:
+        dot.node(entry[0])
         for L, name in enumerate(entry[1:]):
-            dot.node(f"{K}{L+1}", name)
-            dot.edge(f"{K}{L}", f"{K}{L+1}")
+            dot.node(name)
+            dot.edge(entry[L], name)
 
     dot.render(".graph.gv")
+    
+    with open("signers.db", "wb") as f:
+        pickle.dump(signers_db, f)
 
-FUNCS = {"generate": generateCLI, "newpackage": newpackageCLI,"package": packageCLI, "clean": cleanCLI}
+FUNCS = {"generate": generateCLI, "package": packageCLI, "clean": cleanCLI}
 
 if __name__ == "__main__":
     __main__()
