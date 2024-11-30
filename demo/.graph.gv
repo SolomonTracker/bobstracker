@@ -1,0 +1,5 @@
+// Package Life Graph
+digraph {
+	A
+	B
+}

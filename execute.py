@@ -5,6 +5,8 @@ import numpy as np
 from processing import package_box, get_signers, gen_signatures
 import pickle
 from PIL import Image
+import subprocess
+import graphviz
 
 image_orig = Image.open("cert_0.png")
 w_orig, h_orig = image_orig.size
@@ -37,8 +39,18 @@ def packageCLI(args):
     sign = signatures_by_name[name]
     image = np.array(Image.open(fp)).reshape(-1)
     image_signed = package_box(image_orig, image, [sign])
-    image_signed = Image.fromarray(image_signed.reshape(h_orig, w_orig))
-    image_signed.save(f"cert_{int(fp[-5])+1}.png")
+    image_signed_to_save = Image.fromarray(image_signed.reshape(h_orig, w_orig))
+    image_signed_to_save.save(f"cert_{int(fp[-5])+1}.png")
+
+    # dot = graphviz.Digraph(comment='Package Life Graph')
+    # dot.node('A')
+    # dot.node('B')
+    # dot.render(".graph.gv")
+
+    signers = get_signers(image_orig, image_signed, signatures_by_name.values(), signatures_by_name.keys())
+    print(signers)
+
+    subprocess.run(["xdg-open", f"cert_{int(fp[-5])+1}.png"])
 
 def failureCLI(_args):
     print("CLI Failure")
