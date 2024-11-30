@@ -48,14 +48,45 @@ def packageCLI(args):
     # dot.render(".graph.gv")
 
     signers = get_signers(image_orig, image_signed, signatures_by_name.values(), signatures_by_name.keys())
-    print(signers)
+
+    update_database(signers)
 
     subprocess.run(["xdg-open", f"cert_{int(fp[-5])+1}.png"])
+
+def cleanCLI(_args):
+    with open("signers.db", "wb") as f:
+        pickle.dump([[]], f)
 
 def failureCLI(_args):
     print("CLI Failure")
 
-FUNCS = {"generate": generateCLI, "package": packageCLI}
+def update_database(signers):
+    try:
+        with open("signers.db", "rb") as f:
+            signers_db = pickle.load(f)
+    except:
+        signers_db = [[]]
+        with open("signers.db", "wb") as f:
+            pickle.dump(signers_db, f)
+
+    for L, entry in enumerate(signers_db):
+        coinc = [comp for comp in signers if comp not in entry]
+        if len(coinc) == 1:
+            signers_db[L].append(coinc[0])
+
+    dot = graphviz.Digraph(comment='Package Life Graph')
+    for entry in signers_db:
+        dot.node(entry[0])
+        for L, name in enumerate(entry[1:]):
+            dot.node(name)
+            dot.edge(entry[L], name)
+
+    dot.render(".graph.gv")
+    
+    with open("signers.db", "wb") as f:
+        pickle.dump(signers_db, f)
+
+FUNCS = {"generate": generateCLI, "package": packageCLI, "clean": cleanCLI}
 
 if __name__ == "__main__":
     __main__()
