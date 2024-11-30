@@ -29,7 +29,7 @@ def generateCLI(args):
         pickle.dump(signatures_by_name, output)
 
 def packageCLI(args):
-    with open("signatures.bob", "wb") as f:
+    with open("signatures.bob", "rb") as f:
         signatures_by_name = pickle.load(f)
 
     name, fp = args
@@ -37,16 +37,13 @@ def packageCLI(args):
     sign = signatures_by_name[name]
     image = np.array(Image.open(fp)).reshape(-1)
     image_signed = package_box(image_orig, image, [sign])
-    if image_signed == -1:
-        failureCLI(0)
-        return
     image_signed = Image.fromarray(image_signed.reshape(h_orig, w_orig))
     image_signed.save(f"cert_{int(fp[-5])+1}.png")
 
 def failureCLI(_args):
     print("CLI Failure")
 
-FUNCS = {"generate": generateCLI}
+FUNCS = {"generate": generateCLI, "package": packageCLI}
 
 if __name__ == "__main__":
     __main__()

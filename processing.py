@@ -45,14 +45,11 @@ def test():
     return
 
 def package_box(orig_image, image, signatures):
-    usable_signature = -1
+    usable_signature = signatures[0]
     for sign in signatures:
         if not check_signature(orig_image, image, sign):
             usable_signature = sign
             break
-
-    if usable_signature == -1:
-        return -1
 
     return sign_image(image, usable_signature)
 
