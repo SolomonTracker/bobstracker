@@ -4,13 +4,13 @@ import sys
 import numpy as np
 from processing import package_box, get_signers, gen_signatures
 import pickle
-from PIL import Image
+from PIL import Image, ImageFilter
 import subprocess
 import graphviz
 
 image_orig = Image.open(".orig.png")
 w_orig, h_orig = image_orig.size
-image_orig = np.array(image_orig).reshape(-1)
+image_orig = np.array(image_orig, dtype=np.uint8).reshape(-1)
 
 def __main__():
     args = sys.argv
@@ -78,6 +78,21 @@ def cleanCLI(_args):
     with open("signatures.bob", "wb") as output:
         pickle.dump({}, output)
 
+def showdiffCLI(_args):
+    with open("signers.db", "rb") as f:
+        signers_db = pickle.load(f)
+    image = np.array(Image.open(get_last_fp(signers_db)), dtype=np.uint8).reshape(-1)
+    image_diff1 = np.array([0 if x == y else 255 for x, y in zip(image_orig, image)], dtype=np.uint8)
+    image_diff1 = Image.fromarray(image_diff1.reshape(h_orig, w_orig))
+    for _ in range(3):
+        image_diff1 = image_diff1.filter(ImageFilter.MaxFilter(3))
+    image_diff2 = image_diff1.filter(ImageFilter.MaxFilter(3))
+    image_diff = (np.array(image_diff2) - np.array(image_diff1)).reshape(-1)
+    image = np.array([x if y != 255 else 255 for x, y in zip(image, image_diff)], dtype=np.uint8)
+    image = Image.fromarray(image.reshape(h_orig, w_orig))
+    image.show()
+    return
+
 def failureCLI(_args):
     print("CLI Failure")
 
@@ -99,7 +114,13 @@ def update_database():
 
     dot.render(".graph.gv")
 
-FUNCS = {"generate": generateCLI, "newpackage": newpackageCLI,"package": packageCLI, "clean": cleanCLI}
+FUNCS = {
+    "generate": generateCLI,
+    "newpackage": newpackageCLI,
+    "package": packageCLI,
+    "clean": cleanCLI,
+    "showdiff": showdiffCLI
+}
 
 if __name__ == "__main__":
     __main__()

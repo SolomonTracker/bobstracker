@@ -62,7 +62,7 @@ def sign_image(image, signature):
     signature: hashmap( (j: int) -> bool )
     """
     
-    return np.array([x if signature.get(j, 0) == 0 else (int(x)+10)%256 for j, x in enumerate(image)], dtype=np.uint8)
+    return np.array([x if signature.get(j, 0) == 0 else (int(x)+25)%256 for j, x in enumerate(image)], dtype=np.uint8)
 
 def check_signature(orig_image, image, signature) -> bool:
     """
