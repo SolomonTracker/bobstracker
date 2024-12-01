@@ -1,4 +1,4 @@
-source venv/bin/activate
+# source venv/bin/activate
 cd demo
 rm pkg_*.png
 alias generate="python ../execute.py generate"
