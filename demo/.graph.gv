@@ -4,7 +4,43 @@ digraph "Package Life Graph" {
 		color=lightgray
 		label="Pkg 0"
 		00 [label=AWS shape=circle]
-		01 [label=Vitol shape=circle]
+		01 [label=BMS shape=circle]
 		00 -> 01
+		02 [label=AWS shape=circle]
+		01 -> 02
+		03 [label=Logitech shape=circle]
+		02 -> 03
+		04 [label=AXA shape=circle]
+		03 -> 04
+	}
+	subgraph cluster_1 {
+		styled=filled
+		color=lightgray
+		label="Pkg 1"
+		10 [label=UBS shape=circle]
+		11 [label=BOBST shape=circle]
+		10 -> 11
+		12 [label=AWS shape=circle]
+		11 -> 12
+		13 [label=UBS shape=circle]
+		12 -> 13
+	}
+	subgraph cluster_2 {
+		styled=filled
+		color=lightgray
+		label="Pkg 2"
+		20 [label=Logitech shape=circle]
+		21 [label=BMS shape=circle]
+		20 -> 21
+	}
+	subgraph cluster_3 {
+		styled=filled
+		color=lightgray
+		label="Pkg 3"
+		30 [label=BOBST shape=circle]
+		31 [label=AXA shape=circle]
+		30 -> 31
+		32 [label=UBS shape=circle]
+		31 -> 32
 	}
 }

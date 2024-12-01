@@ -21,6 +21,10 @@ def __main__():
     return
 
 def generateCLI(args):
+    if len(args) == 0:
+        sponsors = ["AWS", "BOBST", "BMS", "Logitech", "AWS", "AXA", "UBS", "Vitol"] 
+        print("Sponsors: "+', '.join(sponsors)+'.')
+        generateCLI(sponsors)
     rng = np.random.default_rng()
     
     signatures = gen_signatures(rng, h_orig*w_orig, 100, len(args))
@@ -30,7 +34,7 @@ def generateCLI(args):
     with open("signatures.bob", "wb") as output:
         pickle.dump(signatures_by_name, output)
 
-def newpackageCLI(args):
+def newpackageCLI(_args):
     with open("signers.db", "rb") as f:
         signers_db = pickle.load(f)
 
@@ -44,11 +48,14 @@ def newpackageCLI(args):
 
     subprocess.run(["cp", ".orig.png", get_last_fp(signers_db)])
 
-def packageCLI(args):
+def packageCLI(args, show_res = True):
     with open("signatures.bob", "rb") as f:
         signatures_by_name = pickle.load(f)
     with open("signers.db", "rb") as f:
         signers_db = pickle.load(f)
+
+    if signers_db[0] == -1:
+        newpackageCLI([])
 
     name = args[0]
     
@@ -66,7 +73,8 @@ def packageCLI(args):
         
     update_database()
 
-    subprocess.run(["xdg-open", get_last_fp(signers_db)])
+    if show_res:
+        subprocess.run(["xdg-open", get_last_fp(signers_db)])
 
 def get_last_fp(signers_db):
     return f"pkg_{chr(ord('a')+signers_db[0])}_{len(signers_db[1][-1])}.png"
@@ -79,17 +87,34 @@ def cleanCLI(_args):
         pickle.dump({}, output)
 
 def showdiffCLI(_args):
+    with open("signatures.bob", "rb") as f:
+        signatures_by_name = pickle.load(f)
     with open("signers.db", "rb") as f:
         signers_db = pickle.load(f)
+
+    mask1 = np.zeros(h_orig*w_orig, dtype=np.uint8)
+    for name in signers_db[1][-1]:
+        for k in signatures_by_name[name]:
+            if signatures_by_name[name][k] == 0:
+                mask1[k] = 255
+        
+    mask1 = Image.fromarray(mask1.reshape(h_orig, w_orig))
+    for _ in range(2):
+        mask1 = mask1.filter(ImageFilter.MaxFilter(3))
+    mask2 = mask1.filter(ImageFilter.MaxFilter(3))
+    mask = (np.array(mask2) - np.array(mask1)).reshape(-1)
+    
     image = np.array(Image.open(get_last_fp(signers_db)), dtype=np.uint8).reshape(-1)
+    
     image_diff1 = np.array([0 if x == y else 255 for x, y in zip(image_orig, image)], dtype=np.uint8)
     image_diff1 = Image.fromarray(image_diff1.reshape(h_orig, w_orig))
     for _ in range(3):
         image_diff1 = image_diff1.filter(ImageFilter.MaxFilter(3))
     image_diff2 = image_diff1.filter(ImageFilter.MaxFilter(3))
     image_diff = (np.array(image_diff2) - np.array(image_diff1)).reshape(-1)
-    image = np.array([x if y != 255 else 255 for x, y in zip(image, image_diff)], dtype=np.uint8)
-    image = Image.fromarray(image.reshape(h_orig, w_orig))
+    
+    image = np.array([[0xF9, 0x54, 0x54] if y == 255 else [0x0D, 0x92, 0xF4] if z == 255 else [x]*3 for (x, y), z in zip(zip(image, image_diff), mask)], dtype=np.uint8)
+    image = Image.fromarray(image.reshape(h_orig, w_orig, -1))
     image.show()
     return
 
@@ -114,12 +139,39 @@ def update_database():
 
     dot.render(".graph.gv")
 
+def complexexampleCLI(_args):
+    cleanCLI([])
+    sponsors = ["AWS", "BOBST", "BMS", "Logitech", "AWS", "AXA", "UBS"] 
+    print("Sponsors: "+','.join(sponsors)+'.')
+    generateCLI(sponsors)
+    newpackageCLI([]); print("Pkg a")
+    packageCLI(["AWS"], False); print("	AWS packages")
+    packageCLI(["BMS"], False); print("	BMS packages")
+    packageCLI(["AWS"], False); print("	AWS packages")
+    packageCLI(["Logitech"], False); print("	Logitech packages")
+    packageCLI(["AXA"], True); print("	AXA packages")
+    newpackageCLI([]); print("Pkg b")
+    packageCLI(["UBS"], False); print("	UBS packages")
+    packageCLI(["BOBST"], False); print("	BOBST packages")
+    packageCLI(["AWS"], False); print("	AWS packages")
+    packageCLI(["UBS"], True); print("	UBS packages")
+    newpackageCLI([]); print("Pkg c")
+    packageCLI(["Logitech"], False); print("	Logitech packages")
+    packageCLI(["BMS"], True); print("	BMS packages")
+    newpackageCLI([]); print("Pkg d")
+    packageCLI(["BOBST"], False); print("	BOBST packages")
+    packageCLI(["AXA"], False); print("	AXA packages")
+    packageCLI(["UBS"], True); print("	UBS packages")
+    subprocess.run(["xdg-open", ".graph.gv.pdf"])
+    showdiffCLI([])
+
 FUNCS = {
     "generate": generateCLI,
     "newpackage": newpackageCLI,
     "package": packageCLI,
     "clean": cleanCLI,
-    "showdiff": showdiffCLI
+    "showdiff": showdiffCLI,
+    "complexexample": complexexampleCLI
 }
 
 if __name__ == "__main__":
