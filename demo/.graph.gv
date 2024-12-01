@@ -1,6 +1,30 @@
-// Package Life Graph
-graph {
-	00 [label=AWS]
-	01 [label=Vitol]
-	00 -- 01
+digraph "Package Life Graph" {
+	subgraph cluster_0 {
+		styled=filled
+		color=lightgray
+		label="Pkg 0"
+		00 [label=SBB shape=circle]
+		01 [label=Vitol shape=circle]
+		00 -> 01
+		02 [label=BOBST shape=circle]
+		01 -> 02
+	}
+	subgraph cluster_1 {
+		styled=filled
+		color=lightgray
+		label="Pkg 1"
+		10 [label=AWS shape=circle]
+		11 [label=HP shape=circle]
+		10 -> 11
+		12 [label=HP shape=circle]
+		11 -> 12
+	}
+	subgraph cluster_2 {
+		styled=filled
+		color=lightgray
+		label="Pkg 2"
+		20 [label=Vitol shape=circle]
+		21 [label=AWS shape=circle]
+		20 -> 21
+	}
 }

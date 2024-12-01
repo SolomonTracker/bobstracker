@@ -85,12 +85,17 @@ def update_database():
     with open("signers.db", "rb") as f:
         signers_db = pickle.load(f)
         
-    dot = graphviz.Digraph(comment='Package Life Graph')
+    dot = graphviz.Digraph('Package Life Graph', filename=".graph.gv")
     for K, entry in enumerate(signers_db[1]):
-        dot.node(f"{K}{0}", entry[0])
+        gdot = graphviz.Digraph(name=f"cluster_{K}")
+        gdot.attr(styled="filled") 
+        gdot.attr(color="lightgray")
+        gdot.attr(label=f"Pkg {K}")
+        gdot.node(f"{K}{0}", entry[0], shape="circle")
         for L, name in enumerate(entry[1:]):
-            dot.node(f"{K}{L+1}", name)
-            dot.edge(f"{K}{L}", f"{K}{L+1}")
+            gdot.node(f"{K}{L+1}", name, shape="circle")
+            gdot.edge(f"{K}{L}", f"{K}{L+1}")
+        dot.subgraph(gdot)
 
     dot.render(".graph.gv")
 
