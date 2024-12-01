@@ -2,7 +2,7 @@
 
 import sys
 import numpy as np
-from processing import package_box, get_signers, gen_signatures
+from processing import package_box, gen_signatures#, get_signers
 import pickle
 from PIL import Image, ImageFilter
 import subprocess
@@ -25,6 +25,10 @@ def generateCLI(args):
         sponsors = ["AWS", "BOBST", "BMS", "Logitech", "AWS", "AXA", "UBS", "Vitol"] 
         print("Sponsors: "+', '.join(sponsors)+'.')
         generateCLI(sponsors)
+        return
+    
+    cleanCLI([])
+
     rng = np.random.default_rng()
     
     signatures = gen_signatures(rng, h_orig*w_orig, 100, len(args))
@@ -56,6 +60,8 @@ def packageCLI(args, show_res = True):
 
     if signers_db[0] == -1:
         newpackageCLI([])
+        packageCLI(args, show_res)
+        return
 
     name = args[0]
     
@@ -72,6 +78,7 @@ def packageCLI(args, show_res = True):
         pickle.dump(signers_db, f)
         
     update_database()
+    showdiffCLI([], False)
 
     if show_res:
         subprocess.run(["xdg-open", get_last_fp(signers_db)])
@@ -86,7 +93,7 @@ def cleanCLI(_args):
     with open("signatures.bob", "wb") as output:
         pickle.dump({}, output)
 
-def showdiffCLI(_args):
+def showdiffCLI(_args, show_res = True):
     with open("signatures.bob", "rb") as f:
         signatures_by_name = pickle.load(f)
     with open("signers.db", "rb") as f:
@@ -115,7 +122,9 @@ def showdiffCLI(_args):
     
     image = np.array([[0xF9, 0x54, 0x54] if y == 255 else [0x0D, 0x92, 0xF4] if z == 255 else [x]*3 for (x, y), z in zip(zip(image, image_diff), mask)], dtype=np.uint8)
     image = Image.fromarray(image.reshape(h_orig, w_orig, -1))
-    image.show()
+    image.save("zzz.png")
+    if show_res:
+        subprocess.run(["xdg-open", "zzz.png"]) 
     return
 
 def failureCLI(_args):
@@ -139,7 +148,7 @@ def update_database():
 
     dot.render(".graph.gv")
 
-def complexexampleCLI(_args):
+def toyexampleCLI(_args):
     cleanCLI([])
     sponsors = ["AWS", "BOBST", "BMS", "Logitech", "AWS", "AXA", "UBS"] 
     print("Sponsors: "+','.join(sponsors)+'.')
@@ -171,7 +180,7 @@ FUNCS = {
     "package": packageCLI,
     "clean": cleanCLI,
     "showdiff": showdiffCLI,
-    "complexexample": complexexampleCLI
+    "toyexample": toyexampleCLI
 }
 
 if __name__ == "__main__":
